@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ask Puneet – AI QnA Bot</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 0 auto; padding: 24px; }
+    #chat { display: flex; flex-direction: column; gap: 10px; margin: 16px 0 80px; }
+    .msg { padding: 10px 14px; border-radius: 12px; white-space: pre-wrap; max-width: 85%; }
+    .user { background: #e8f0fe; align-self: flex-end; }
+    .ai { background: #f1f3f4; align-self: flex-start; }
+    form { position: fixed; bottom: 0; left: 0; right: 0; max-width: 720px; margin: 0 auto;
+           display: flex; gap: 8px; padding: 16px 24px; background: #fff; box-sizing: border-box; }
+    input { flex: 1; padding: 10px; font-size: 16px; }
+    button { padding: 10px 18px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h1>🤖 Ask Puneet – AI QnA Bot</h1>
+  <p>Puneet Rawat QnA Bot with LangChain and Groq !</p>
+
+  <div id="chat"></div>
+
+  <form id="form">
+    <input id="query" placeholder="Ask anything ?" autocomplete="off" />
+    <button type="submit">Send</button>
+  </form>
+
+  <script>
+    // st.session_state.messages ka equivalent
+    const messages = [];
+    const chat = document.getElementById("chat");
+    const form = document.getElementById("form");
+    const input = document.getElementById("query");
+
+    function render() {
+      chat.innerHTML = "";
+      for (const { role, content } of messages) {
+        const div = document.createElement("div");
+        div.className = `msg ${role}`;
+        div.textContent = content;
+        chat.appendChild(div);
+      }
+      window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const query = input.value.trim();
+      if (!query) return;
+
+      messages.push({ role: "user", content: query });
+      input.value = "";
+      render();
+
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages }),
+        });
+        const data = await res.json();
+        messages.push({ role: "ai", content: data.content ?? data.error });
+      } catch {
+        messages.push({ role: "ai", content: "Network error, please try again." });
+      }
+      render();
+    });
+  </script>
+</body>
+</html>
